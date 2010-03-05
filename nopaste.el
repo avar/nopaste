@@ -1,6 +1,6 @@
-;;; pbotutil.el --- interface to pbotutil.pl
+;;; nopaste.el --- interface to nopaste.pl
 
-;; Copyright (C) 2007 Ævar Arnfjörð Bjarmason
+;; Copyright (C) 2007, 2010 Ævar Arnfjörð Bjarmason
 
 ;; Author: Ævar Arnfjörð Bjarmason <avar@cpan.org>
 ;; Created: 2007-11-22
@@ -25,45 +25,59 @@
 
 ;;; Commentary:
 
-;; Interfaces with paste bots via the `pbotutil.pl' utility found at
-;; http://sial.org/code/perl/scripts/pbotutil.pl
+;; Interfaces with paste bots via the `nopaste' which is part of the
+;; `App::Nopaste' CPAN distribution found at
+;; http://github.com/sartak/app-nopaste
 
 ;; Example usage with a custom path and nick:
 
-;; (require 'pbotutil)
-;; (setq pbotutil-command "perl ~/pbotutil.pl")
-;; (setq pbotutil-nick "avar")
+;; (require 'nopaste)
+;; (setq nopaste-nick "avar")
 
 ;;; Code:
 
-(defvar pbotutil-command "pbotutil.pl"
-  "The pbotutil.pl command name, this could be changed to \"perl
-  ~/pbotutil.pl\" if pbotutil.pl were not in $PATH")
-(defvar pbotutil-nick ""
-  "The nickname `pbotutil-region' will use by default")
-(defvar pbotutil-channel "#perl"
-  "The channel `pbotutil-region' will use by default")
 
-(defvar pbotutil-prev-summary ""
-  "The last summary provided. For internal use")
-(defvar pbotutil-prev-channel nil
+;; Public variables
+(defvar nopaste-nickname ""
+  "The nick given to nopaste")
+(defvar nopaste-description ""
+  "The description given to nopaste")
+(defvar nopaste-channel ""
+  "The channel given to nopaste")
+(defvar nopaste-language ""
+  "The the language given to nopaste")
+(defvar nopaste-service ""
+  "The nopaste service to use. This can also be set through the
+  NOPASTE_SERVICES environmental variable to be read by nopaste
+  itself.")
+
+(defvar nopaste-command "nopaste"
+  "The nopaste command name. Will use `nopaste' in your system's
+  $PATH by default")
+
+;; Internal variables
+(defvar nopaste-prev-description ""
+  "The last description provided. For internal use")
+(defvar nopaste-prev-channel nil
+  "The last channel provided or `nil' if none. For internal use")
+(defvar nopaste-prev-channel nil
   "The last channel provided or `nil' if none. For internal use")
 
-(defun pbotutil-region (start end &optional channel nick summary)
+(defun nopaste-region (start end &optional nickname description channel)
   ""
   (interactive "r")
-  (let ((channel (or channel (read-from-minibuffer "Channel: " (or pbotutil-prev-channel pbotutil-channel))))
-        (nick (or nick (read-from-minibuffer "Nick: " pbotutil-nick)))
-        (summary (read-from-minibuffer "Summary: " pbotutil-prev-summary)))
-    (setq pbotutil-prev-summary summary)
-    (setq pbotutil-prev-channel channel)
-    (let* ((out (make-temp-file "pbotutil"))
+  (let ((nickname (or nickname (read-from-minibuffer "Nick: " nopaste-nickname)))
+        (description (read-from-minibuffer "Description: " nopaste-prev-description))
+        (channel (or channel (read-from-minibuffer "Channel: " (or nopaste-prev-channel nopaste-channel)))))
+    (setq nopaste-prev-description description)
+    (setq nopaste-prev-channel channel)
+    (let* ((out (make-temp-file "nopaste"))
            (command (concat
-                     pbotutil-command
-                     " -c '" channel
-                     "' -u '" nick
-                     "' -m '" summary
-                     "' put '" out "'")))
+                     nopaste-command
+                     " --channel '" channel
+                     "' --name '" nickname
+                     "' --description '" description
+                     "' '" out "'")))
       (unwind-protect
            (progn
              (write-region start end out)
@@ -73,12 +87,6 @@
                (kill-new url))
              (delete-file out))))))
 
-(defun pbotutil-get (url)
-  "Uses \"pbotutil.pl get\" to get the contents of a given paste
-  url"
-  (let ((command (concat pbotutil-command " get '" url "'")))
-    (shell-command-to-string command)))
+(provide 'nopaste)
 
-(provide 'pbotutil)
-
-;;; pbotutil.el ends here
+;;; nopaste.el ends here
