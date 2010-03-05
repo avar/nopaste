@@ -60,8 +60,6 @@
   "The last description provided. For internal use")
 (defvar nopaste-prev-channel nil
   "The last channel provided or `nil' if none. For internal use")
-(defvar nopaste-prev-channel nil
-  "The last channel provided or `nil' if none. For internal use")
 
 (defun nopaste-region (start end &optional nickname description channel)
   ""
