@@ -61,10 +61,10 @@
 (defvar nopaste-prev-channel nil
   "The last channel provided or `nil' if none. For internal use")
 
-(defun nopaste-buffer (&optional nickname description channel)
-  "wrapper"
+(defun nopaste-buffer (start end &optional nickname description channel)
+  "wrapper" 
   (interactive "r")
-  (nopaste-region (point-min) (point-max) nickname description channel))
+  (nopaste-region start end nickname description channel))
 
 (defun nopaste-region (start end &optional nickname description channel)
   ""
@@ -76,13 +76,6 @@
         (language nil)
         (args
          (append
-          (list
-           start
-           end
-           "nopaste"
-           nil
-           "*nopaste*"
-           t)
           (and nickname (list "--name" nickname))
           (and channel (list "--channel" channel))
           (and description (list "--description" description))
@@ -92,7 +85,7 @@
     (setq nopaste-prev-description description)
     (setq nopaste-prev-channel channel)
 
-    (let* ((exit-value (apply 'call-process-region args)))
+    (let* ((exit-value (apply 'call-process-region start end "nopaste" nil "*nopaste*" t args)))
       (cond ((or (null exit-value) (eq 0 exit-value)))
             ((numberp exit-value)
              (error "nopaste failed with exit value %d" exit-value))
