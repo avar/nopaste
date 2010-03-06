@@ -61,10 +61,11 @@
 (defvar nopaste-prev-channel nil
   "The last channel provided or `nil' if none. For internal use")
 
-(defun nopaste-buffer (start end &optional nickname description channel)
+(defun nopaste-buffer (start end)
   "wrapper" 
   (interactive "r")
-  (nopaste-region start end nickname description channel))
+  (mark-whole-buffer)
+  (nopaste-region (point-min) (point-max)))
 
 (defun nopaste-region (start end &optional nickname description channel)
   ""
