@@ -69,9 +69,9 @@
 (defun nopaste-region (start end &optional nickname description channel)
   ""
   (interactive "r")
-  (let* ((nickname (or nickname (read-from-minibuffer "Nick: " nopaste-nickname)))
-        (description (read-from-minibuffer "Description: " nopaste-prev-description))
-        (channel (or channel (read-from-minibuffer "Channel: " (or nopaste-prev-channel nopaste-channel))))
+  (let* ((nickname (or nickname nopaste-nickname  (read-from-minibuffer "Nick: " nopaste-nickname)))
+        (description (and nopaste-description (read-from-minibuffer "Description: " nopaste-prev-description)))
+        (channel (and nopaste-channel (or channel (read-from-minibuffer "Channel: " (or nopaste-prev-channel nopaste-channel)))))
         (service nil)
         (language nil)
         (args
