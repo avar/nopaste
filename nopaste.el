@@ -61,29 +61,46 @@
 (defvar nopaste-prev-channel nil
   "The last channel provided or `nil' if none. For internal use")
 
+(defun nopaste-buffer (&optional nickname description channel)
+  "wrapper"
+  (interactive "r")
+  (nopaste-region (point-min) (point-max) nickname description channel))
+
 (defun nopaste-region (start end &optional nickname description channel)
   ""
   (interactive "r")
-  (let ((nickname (or nickname (read-from-minibuffer "Nick: " nopaste-nickname)))
+  (let* ((nickname (or nickname (read-from-minibuffer "Nick: " nopaste-nickname)))
         (description (read-from-minibuffer "Description: " nopaste-prev-description))
-        (channel (or channel (read-from-minibuffer "Channel: " (or nopaste-prev-channel nopaste-channel)))))
+        (channel (or channel (read-from-minibuffer "Channel: " (or nopaste-prev-channel nopaste-channel))))
+        (service nil)
+        (language nil)
+        (args
+         (append
+          (list
+           start
+           end
+           "nopaste"
+           nil
+           "*nopaste*"
+           t)
+          (and nickname (list "--name" nickname))
+          (and channel (list "--channel" channel))
+          (and description (list "--description" description))
+          (and service (list "--service" service))
+          (and language (list "--language language")))))
+
     (setq nopaste-prev-description description)
     (setq nopaste-prev-channel channel)
-    (let* ((out (make-temp-file "nopaste"))
-           (command (concat
-                     nopaste-command
-                     " --channel '" channel
-                     "' --name '" nickname
-                     "' --description '" description
-                     "' '" out "'")))
-      (unwind-protect
-           (progn
-             (write-region start end out)
-             (let* ((str (shell-command-to-string command))
-                    (str-len (length str))
-                    (url (substring str 0 (- str-len 1))))
-               (kill-new url))
-             (delete-file out))))))
+
+    (let* ((exit-value (apply 'call-process-region args)))
+      (cond ((or (null exit-value) (eq 0 exit-value)))
+            ((numberp exit-value)
+             (error "nopaste failed with exit value %d" exit-value))
+            ((stringp exit-value)
+             (error "nopaste terminated by signal: %s" exit-value))
+            (t
+             (error "nopaste fall through: %S" exit-value))))))
+
 
 (provide 'nopaste)
 
