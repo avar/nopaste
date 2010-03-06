@@ -93,10 +93,26 @@
              (error "nopaste terminated by signal: %s" exit-value))
             (t
              (error "nopaste fall through: %S" exit-value)))
-      (with-current-buffern "*nopaste*"
-        (kill-new (buffer-string))
-        (erase-buffer)))))
+      (with-current-buffer "*nopaste*"
+        (let ((url (chomp (buffer-string))))
+          (message "Got URL %s from nopaste" url)
+          (kill-new url)
+          (erase-buffer))))))
 
+;; From http://github.com/al3x/emacs/blob/cdbd57f589f967efa5e9d4c83e88497db0fd71f9/utilities/chomp.el
+(defun chomp (str)
+     "..."
+     (let ((s (if (symbolp str)(symbol-name str) str)))
+        (save-excursion
+          (while (and
+                  (not (null (string-match "^\\( \\|\f\\|\t\\|\n\\)" s)))
+                  (> (length s) (string-match "^\\( \\|\f\\|\t\\|\n\\)" s)))
+            (setq s (replace-match "" t nil s)))
+          (while (and
+                  (not (null (string-match "\\( \\|\f\\|\t\\|\n\\)$" s)))
+                  (> (length s) (string-match "\\( \\|\f\\|\t\\|\n\\)$" s)))
+            (setq s (replace-match "" t nil s))))
+        s))
 
 (provide 'nopaste)
 
