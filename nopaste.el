@@ -92,7 +92,10 @@
             ((stringp exit-value)
              (error "nopaste terminated by signal: %s" exit-value))
             (t
-             (error "nopaste fall through: %S" exit-value))))))
+             (error "nopaste fall through: %S" exit-value)))
+      (with-current-buffern "*nopaste*"
+        (kill-new (buffer-string))
+        (erase-buffer)))))
 
 
 (provide 'nopaste)
