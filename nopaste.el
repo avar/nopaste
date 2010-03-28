@@ -36,8 +36,7 @@
 
 ;; The recommended keybindings are:
 ;;
-;; (global-set-key (kbd "C-c n b") 'nopaste-buffer)
-;; (global-set-key (kbd "C-c n r") 'nopaste-region)
+;; (global-set-key (kbd "C-c n p") 'nopaste)
 ;; (global-set-key (kbd "C-c n y") 'nopaste-yank-url)
 
 ;;; Code:
@@ -68,14 +67,23 @@
   "The last channel provided or `nil' if none. For internal use")
 
 (defvar nopaste-last-url nil "The last URL from the paste server")
+(defvar nopaste-kill-last-url t
+  "Whether to `kill-new' the URL we get to make it available in
+the kill ring")
 
-(defun nopaste-buffer (start end)
-  "`mark-whole-buffer' and nopaste it." 
+(defun nopaste (&optional start end nickname description channel)
+  "Nopaste either the currently active region or the entire
+buffer. If `region-active-p' is true we'll paste the region,
+otherwise we'll paste the buffer from `point-min' to
+`point-max'."
   (interactive "r")
-  (nopaste-region (point-min) (point-max)))
+  (when (not (region-active-p))
+    (setq start (point-min) end (point-max)))
+  (nopaste-region start end nickname description channel))
 
 (defun nopaste-region (start end &optional nickname description channel)
-  "nopaste the currently selected region."
+  "Nopaste a given region, nopaste will be called with
+`call-process-region'."
   (interactive "r")
   (let* ((nickname (or nickname nopaste-nickname  (read-from-minibuffer "Nick: " nopaste-nickname)))
         (description (and nopaste-description (read-from-minibuffer "Description: " nopaste-prev-description)))
@@ -108,7 +116,9 @@
 
           (set-buffer temp-buffer-name)
           (let ((url (chomp (buffer-string))))
-            (message "Got URL %s from nopaste, use `nopaste-yank-url' to grab it" url)
+            (message "Got URL %s from nopaste" url)
+            (when nopaste-kill-last-url
+              (kill-new url))
             (setq nopaste-last-url url)))))))
 
 
