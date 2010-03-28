@@ -72,7 +72,6 @@
 (defun nopaste-buffer (start end)
   "`mark-whole-buffer' and nopaste it." 
   (interactive "r")
-  (mark-whole-buffer)
   (nopaste-region (point-min) (point-max)))
 
 (defun nopaste-region (start end &optional nickname description channel)
