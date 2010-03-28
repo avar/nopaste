@@ -34,6 +34,12 @@
 ;; (require 'nopaste)
 ;; (setq nopaste-nick "avar")
 
+;; The recommended keybindings are:
+;;
+;; (global-set-key (kbd "C-c n b") 'nopaste-buffer)
+;; (global-set-key (kbd "C-c n r") 'nopaste-region)
+;; (global-set-key (kbd "C-c n y") 'nopaste-yank-url)
+
 ;;; Code:
 
 
