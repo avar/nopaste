@@ -75,7 +75,96 @@ Will use `nopaste' in your system's $PATH by default")
 (defvar nopaste-kill-last-url t
   "Whether to make the URL we get available in the kill ring.")
 
-(defun nopaste (&optional start end nickname description channel)
+(defcustom nopaste-type-assoc
+  '((actionscript-mode . " actionscript")
+    (ada-mode . "ada")
+    (asm-mode . "asm")
+    (autoconf-mode . "bash")
+    (bibtex-mode . "bibtex")
+    (cmake-mode . "cmake")
+    (c-mode . "c")
+    (c++-mode . "cpp")
+    (cobol-mode . "cobol")
+    (conf-colon-mode . "properties")
+    (conf-javaprop-mode . "properties")
+    (conf-mode . "ini")
+    (conf-space-mode . "properties")
+    (conf-unix-mode . "ini")
+    (conf-windows-mode . "ini")
+    (cperl-mode . "perl")
+    (csharp-mode . "csharp")
+    (css-mode . "css")
+    (delphi-mode . "delphi")
+    (diff-mode . "diff")
+    (ebuild-mode . "bash")
+    (eiffel-mode . "eiffel")
+    (emacs-lisp-mode . "lisp")
+    (erlang-mode . "erlang")
+    (erlang-shell-mode . "erlang")
+    (espresso-mode . "javascript")
+    (fortran-mode . "fortran")
+    (glsl-mode . "glsl")
+    (gnuplot-mode . "gnuplot")
+    (graphviz-dot-mode . "dot")
+    (haskell-mode . "haskell")
+    (html-mode . "html4strict")
+    (idl-mode . "idl")
+    (inferior-haskell-mode . "haskell")
+    (inferior-octave-mode . "octave")
+    (inferior-python-mode . "python")
+    (inferior-ruby-mode . "ruby")
+    (java-mode . "java")
+    (js2-mode . "javascript")
+    (jython-mode . "python")
+    (latex-mode . "latex")
+    (lisp-mode . "lisp")
+    (lua-mode . "lua")
+    (makefile-mode . "make")
+    (makefile-automake-mode . "make")
+    (makefile-gmake-mode . "make")
+    (makefile-makepp-mode . "make")
+    (makefile-bsdmake-mode . "make")
+    (makefile-imake-mode . "make")
+    (matlab-mode . "matlab")
+    (nxml-mode . "xml")
+    (oberon-mode . "oberon2")
+    (objc-mode . "objc")
+    (ocaml-mode . "ocaml")
+    (octave-mode . "matlab")
+    (pascal-mode . "pascal")
+    (perl-mode . "perl")
+    (php-mode . "php")
+    (plsql-mode . "plsql")
+    (po-mode . "gettext")
+    (prolog-mode . "prolog")
+    (python-2-mode . "python")
+    (python-3-mode . "python")
+    (python-basic-mode . "python")
+    (python-mode . "python")
+    (ruby-mode . "ruby")
+    (scheme-mode . "lisp")
+    (shell-mode . "bash")
+    (sh-mode . "bash")
+    (smalltalk-mode . "smalltalk")
+    (sql-mode . "sql")
+    (tcl-mode . "tcl")
+    (visual-basic-mode . "vb")
+    (xml-mode . "xml")
+    (yaml-mode . "properties"))
+  "Alist composed of major-mode names and corresponding pastebin
+highlight formats.
+
+This'll be used as the default `LANGUAGE' parameter to
+`nopaste'. Of course it's only a default, some nopaste(1)
+services take e.g. \"Perl\" instead of \"perl\", or maybe
+\"yaml\" instead of \"properties\".
+
+The definition was stolen as-is from pastebin.el at
+http://www.emacswiki.org/emacs/pastebin.el"
+  :type '(alist :key-type symbol :value-tupe string)
+  :group 'nopaste)
+
+(defun nopaste (&optional start end nickname description channel language)
    "Shell out to the nopaste(1) program with the current region or buffer.
 
 Nopastes either the currently active region from `START' to
@@ -83,32 +172,32 @@ Nopastes either the currently active region from `START' to
 paste the region, otherwise we'll paste the buffer from
 `point-min' to `point-max'.
 
-Other optional arguments are `NICKNAME' `DESCRIPTION' and
-`CHANNEL'."
+Other optional arguments are `NICKNAME' `DESCRIPTION', `CHANNEL'
+and `LANGUAGE'."
   (interactive "r")
   (when (not (region-active-p))
     (setq start (point-min) end (point-max)))
-  (nopaste-region start end nickname description channel))
+  (nopaste-region start end nickname description channel language))
 
-(defun nopaste-region (start end &optional nickname description channel)
+(defun nopaste-region (start end &optional nickname description channel language)
   "Nopaste a given region, nopaste will be called with `call-process-region'.
 
 The arguments are like the arguments to `nopaste', except `START'
-and `END' aren't optional, i.e it also takes `NICKNAME' `DESCRIPTION' and
-`CHANNEL'"
+and `END' aren't optional, i.e it also takes `NICKNAME'
+`DESCRIPTION', `CHANNEL' and `LANGUAGE'."
   (interactive "r")
   (let* ((nickname (or nickname nopaste-nickname  (read-from-minibuffer "Nick: " nopaste-nickname)))
         (description (and nopaste-description (read-from-minibuffer "Description: " nopaste-prev-description)))
         (channel (and nopaste-channel (or channel (read-from-minibuffer "Channel: " (or nopaste-prev-channel nopaste-channel)))))
-        (service nil)
-        (language nil)
+        (service (or nopaste-service nil))
+        (language (or (assoc-default major-mode nopaste-type-assoc) nil))
         (args
          (append
           (and nickname (list "--name" nickname))
           (and channel (list "--channel" channel))
           (and description (list "--description" description))
           (and service (list "--service" service))
-          (and language (list "--language language")))))
+          (and language (list "--language" language)))))
 
     (setq nopaste-prev-description description)
     (setq nopaste-prev-channel channel)
