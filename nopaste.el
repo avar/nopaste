@@ -55,7 +55,7 @@
   "The channel given to nopaste.")
 (defvar nopaste-language ""
   "The the language given to nopaste.")
-(defvar nopaste-service ""
+(defvar nopaste-service nil
   "The nopaste service to use.
 This can also be set through the
 NOPASTE_SERVICES environmental variable to be read by nopaste
