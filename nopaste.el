@@ -202,27 +202,30 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
     (setq nopaste-prev-description description)
     (setq nopaste-prev-channel channel)
 
-    (let ((current-buffer-name (buffer-name)))
-      (with-temp-buffer
-        (let ((temp-buffer-name (buffer-name)))
-          (set-buffer current-buffer-name)
+    (let ((proc (make-process :filter #'nopaste-handler
+                              :command (cons "nopaste" args)
+                              :connection-type 'pipe
+                              :buffer nil
+                              :name "nopaste")))
+      (process-send-region proc start end)
+      (process-send-eof proc)
+      (message "paste started"))))
 
-          ;; Call nopaste
-          (let ((exit-value (apply 'call-process-region start end "nopaste" nil temp-buffer-name t args)))
-            (if (numberp exit-value)
-              (cond
-               ((eq 0 exit-value))
-               (t (error "Error: nopaste failed with exit value %d" exit-value)))
-              (error "Error: nopaste failed failed: %s" exit-value)))
-
-          (set-buffer temp-buffer-name)
-          (let ((url (-nopaste-chomp (buffer-string))))
-            (message "Got URL %s from nopaste" url)
-            (when nopaste-kill-last-url
-              (kill-new url))
-            (setq nopaste-last-url url)))))))
-
-
+(defun nopaste-handler (proc string)
+  "handle async output from `nopaste-region'"
+  (setq status (process-exit-status proc))
+  (if (= status 0)
+      ;; TODO: the chomp might want to check for errors if the
+      ;; sentinel doesn't suffice
+      (let ((url (-nopaste-chomp string)))
+        (message "Got URL %s from nopaste" url)
+        (when nopaste-kill-last-url
+          (kill-new url))
+        (setq nopaste-last-url url))
+    ;; TODO: this should be handled in a sentinel instead
+    (error "Error: %s failed with exit value %d: %s"
+           (process-command proc) status string)))
+  
 (defun nopaste-yank-url ()
   "Insert the URL of the last nopaste at point."
   (interactive)
