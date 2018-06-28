@@ -45,35 +45,45 @@
 
 ;;; Code:
 
+(defgroup nopaste nil
+  "Paste bin support for Emacs"
+  :group 'applications)
 
 ;; Public variables
-(defvar nopaste-nickname ""
-  "The nick given to nopaste.")
-(defvar nopaste-description ""
-  "The description given to nopaste.")
-(defvar nopaste-channel ""
-  "The channel given to nopaste.")
-(defvar nopaste-language ""
-  "The the language given to nopaste.")
-(defvar nopaste-service nil
+(defcustom nopaste-nickname ""
+  "The nick given to nopaste."
+  :type 'string
+  :group 'nopaste)
+(defcustom nopaste-description ""
+  "The description given to nopaste."
+  :type 'string
+  :group 'nopaste)
+(defcustom nopaste-channel ""
+  "The channel given to nopaste."
+  :type 'string
+  :group 'nopaste)
+(defcustom nopaste-language ""
+  "The the language given to nopaste."
+  :type 'string
+  :group 'nopaste)
+(defcustom nopaste-service ""
   "The nopaste service to use.
 This can also be set through the
 NOPASTE_SERVICES environmental variable to be read by nopaste
-  itself.")
+  itself."
+  :type 'string
+  :group 'nopaste)
 
-(defvar nopaste-command "nopaste"
+(defcustom nopaste-command "nopaste"
   "The nopaste command name.
-Will use `nopaste' in your system's $PATH by default")
+Will use `nopaste' in your system's $PATH by default"
+  :type 'string
+  :group 'nopaste)
 
-;; Internal variables
-(defvar nopaste-prev-description ""
-  "The last description provided.  For internal use.")
-(defvar nopaste-prev-channel nil
-  "The last channel provided or nil if none.  For internal use.")
-
-(defvar nopaste-last-url nil "The last URL from the paste server.")
-(defvar nopaste-kill-last-url t
-  "Whether to make the URL we get available in the kill ring.")
+(defcustom nopaste-kill-last-url t
+  "Whether to make the URL we get available in the kill ring."
+  :type 'boolean
+  :group 'nopaste)
 
 (defcustom nopaste-type-assoc
   '((actionscript-mode . " actionscript")
@@ -163,6 +173,13 @@ The definition was stolen as-is from pastebin.el at
 http://www.emacswiki.org/emacs/pastebin.el"
   :type '(alist :key-type symbol :value-tupe string)
   :group 'nopaste)
+
+;; Internal variables
+(defvar nopaste-prev-description ""
+  "The last description provided.  For internal use.")
+(defvar nopaste-prev-channel nil
+  "The last channel provided or nil if none.  For internal use.")
+(defvar nopaste-last-url nil "The last URL from the paste server.")
 
 (defun nopaste (&optional start end nickname description channel language)
    "Shell out to the nopaste(1) program with the current region or buffer.
