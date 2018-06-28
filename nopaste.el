@@ -80,13 +80,6 @@ Will use `nopaste' in your system's $PATH by default"
   :type 'string
   :group 'nopaste)
 
-;; Internal variables
-(defvar nopaste-prev-description ""
-  "The last description provided.  For internal use.")
-(defvar nopaste-prev-channel nil
-  "The last channel provided or nil if none.  For internal use.")
-
-(defvar nopaste-last-url nil "The last URL from the paste server.")
 (defcustom nopaste-kill-last-url t
   "Whether to make the URL we get available in the kill ring."
   :type 'boolean
@@ -180,6 +173,13 @@ The definition was stolen as-is from pastebin.el at
 http://www.emacswiki.org/emacs/pastebin.el"
   :type '(alist :key-type symbol :value-tupe string)
   :group 'nopaste)
+
+;; Internal variables
+(defvar nopaste-prev-description ""
+  "The last description provided.  For internal use.")
+(defvar nopaste-prev-channel nil
+  "The last channel provided or nil if none.  For internal use.")
+(defvar nopaste-last-url nil "The last URL from the paste server.")
 
 (defun nopaste (&optional start end nickname description channel language)
    "Shell out to the nopaste(1) program with the current region or buffer.
