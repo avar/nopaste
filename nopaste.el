@@ -244,6 +244,11 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
   (when nopaste-proc-buffer
     (nopaste-ordinary-insertion-filter proc string))
   (setq status (process-exit-status proc))
+  (setq err-format "Error: %s failed with exit value %d")
+  (when nopaste-proc-buffer-errors
+    (setq err-format (concat err-format
+                             (format ", see %s for details"
+                                     nopaste-proc-buffer-errors))))
   (if (= status 0)
       ;; TODO: the chomp might want to check for errors if the
       ;; sentinel doesn't suffice
@@ -253,8 +258,7 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
           (kill-new url))
         (setq nopaste-last-url url))
     ;; TODO: this should be handled in a sentinel instead
-    (error "Error: %s failed with exit value %d: %s"
-           (process-command proc) status string)))
+    (error err-format (process-command proc) status)))
   
 (defun nopaste-yank-url ()
   "Insert the URL of the last nopaste at point."
