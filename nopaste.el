@@ -75,6 +75,11 @@ Will use `nopaste' in your system's $PATH by default")
 (defvar nopaste-kill-last-url t
   "Whether to make the URL we get available in the kill ring.")
 
+(defvar nopaste-proc-buffer nil
+  "Log interactions with the subprocess in the given buffer
+  name. For example, can be set to `*nopaste*' to see the output
+  of the command interactively.")
+
 (defcustom nopaste-type-assoc
   '((actionscript-mode . " actionscript")
     (ada-mode . "ada")
@@ -205,14 +210,31 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
     (let ((proc (make-process :filter #'nopaste-handler
                               :command (cons "nopaste" args)
                               :connection-type 'pipe
-                              :buffer nil
+                              :buffer nopaste-proc-buffer
                               :name "nopaste")))
       (process-send-region proc start end)
       (process-send-eof proc)
       (message "paste started"))))
 
+(defun nopaste-ordinary-insertion-filter (proc string)
+  "Append output of command to the assigned process buffer.
+
+   Cargo-culted from the `Filter functions' topic in the Elisp
+   info manual"
+  (when (buffer-live-p (process-buffer proc))
+    (with-current-buffer (process-buffer proc)
+      (let ((moving (= (point) (process-mark proc))))
+        (save-excursion
+          ;; Insert the text, advancing the process marker.
+          (goto-char (process-mark proc))
+          (insert string)
+          (set-marker (process-mark proc) (point)))
+        (if moving (goto-char (process-mark proc)))))))
+
 (defun nopaste-handler (proc string)
   "handle async output from `nopaste-region'"
+  (when nopaste-proc-buffer
+    (nopaste-ordinary-insertion-filter proc string))
   (setq status (process-exit-status proc))
   (if (= status 0)
       ;; TODO: the chomp might want to check for errors if the
