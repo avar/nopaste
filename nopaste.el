@@ -215,6 +215,7 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
     (setq nopaste-prev-channel channel)
 
     (let ((proc (make-process :filter #'nopaste-handler
+                              :sentinel #'nopaste-sentinel
                               :command (cons "nopaste" args)
                               :connection-type 'pipe
                               :buffer nopaste-proc-buffer
@@ -243,23 +244,25 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
   "handle async output from `nopaste-region'"
   (when nopaste-proc-buffer
     (nopaste-ordinary-insertion-filter proc string))
-  (setq status (process-exit-status proc))
-  (setq err-format "Error: %s failed with exit value %d")
-  (when nopaste-proc-buffer-errors
-    (setq err-format (concat err-format
-                             (format ", see %s for details"
-                                     nopaste-proc-buffer-errors))))
-  (if (= status 0)
-      ;; TODO: the chomp might want to check for errors if the
-      ;; sentinel doesn't suffice
-      (let ((url (-nopaste-chomp string)))
-        (message "Got URL %s from nopaste" url)
-        (when nopaste-kill-last-url
-          (kill-new url))
-        (setq nopaste-last-url url))
-    ;; TODO: this should be handled in a sentinel instead
-    (error err-format (process-command proc) status)))
-  
+  ;; TODO: the chomp might want to check for errors if the
+  ;; sentinel doesn't suffice
+  (let ((url (-nopaste-chomp string)))
+    (message "Got URL %s from nopaste" url)
+    (when nopaste-kill-last-url
+      (kill-new url))
+    (setq nopaste-last-url url)))
+
+(defun nopaste-sentinel (proc event)
+  "handle errors from async process"
+  (let ((err-fmt "Paste command %s failed with exit value %d")
+        (status (process-exit-status proc)))
+    (unless (= 0 status)
+      (error (or (and (not nopaste-proc-buffer-errors) err-fmt)
+               (concat err-fmt
+                       (format ", see %s for details"
+                               nopaste-proc-buffer-errors)))
+             (process-command proc) status))))
+
 (defun nopaste-yank-url ()
   "Insert the URL of the last nopaste at point."
   (interactive)
