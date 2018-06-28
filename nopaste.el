@@ -66,12 +66,12 @@ NOPASTE_SERVICES environmental variable to be read by nopaste
 Will use `nopaste' in your system's $PATH by default")
 
 ;; Internal variables
-(defvar nopaste-prev-description ""
+(defvar nopaste--prev-description ""
   "The last description provided.  For internal use.")
-(defvar nopaste-prev-channel nil
+(defvar nopaste--prev-channel nil
   "The last channel provided or nil if none.  For internal use.")
 
-(defvar nopaste-last-url nil "The last URL from the paste server.")
+(defvar nopaste--last-url nil "The last URL from the paste server.")
 (defvar nopaste-kill-last-url t
   "Whether to make the URL we get available in the kill ring.")
 
@@ -84,7 +84,7 @@ Will use `nopaste' in your system's $PATH by default")
   "Buffer name where to send errors from the subprocess. Can be
   set to `nil' to use the same buffer as `nopaste-proc-buffer`,
   but that also has the side-effect of sending errors to the
-  `nopaste-handler' which might be confusing because errors will
+  `nopaste--filter' which might be confusing because errors will
   be mixed with URLs.")
 
 (defcustom nopaste-type-assoc
@@ -199,8 +199,8 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
 `DESCRIPTION', `CHANNEL' and `LANGUAGE'."
   (interactive "r")
   (let* ((nickname (or nickname nopaste-nickname  (read-from-minibuffer "Nick: " nopaste-nickname)))
-        (description (and nopaste-description (read-from-minibuffer "Description: " nopaste-prev-description)))
-        (channel (and nopaste-channel (or channel (read-from-minibuffer "Channel: " (or nopaste-prev-channel nopaste-channel)))))
+        (description (and nopaste-description (read-from-minibuffer "Description: " nopaste--prev-description)))
+        (channel (and nopaste-channel (or channel (read-from-minibuffer "Channel: " (or nopaste--prev-channel nopaste-channel)))))
         (service (or nopaste-service nil))
         (language (or (assoc-default major-mode nopaste-type-assoc) nil))
         (args
@@ -211,11 +211,11 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
           (and service (list "--service" service))
           (and language (list "--language" language)))))
 
-    (setq nopaste-prev-description description)
-    (setq nopaste-prev-channel channel)
+    (setq nopaste--prev-description description)
+    (setq nopaste--prev-channel channel)
 
-    (let ((proc (make-process :filter #'nopaste-handler
-                              :sentinel #'nopaste-sentinel
+    (let ((proc (make-process :filter #'nopaste--filter
+                              :sentinel #'nopaste--sentinel
                               :command (cons "nopaste" args)
                               :connection-type 'pipe
                               :buffer nopaste-proc-buffer
@@ -225,7 +225,7 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
       (process-send-eof proc)
       (message "paste started"))))
 
-(defun nopaste-ordinary-insertion-filter (proc string)
+(defun nopaste--ordinary-insertion-filter (proc string)
   "Append output of command to the assigned process buffer.
 
    Cargo-culted from the `Filter functions' topic in the Elisp
@@ -240,19 +240,19 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
           (set-marker (process-mark proc) (point)))
         (if moving (goto-char (process-mark proc)))))))
 
-(defun nopaste-handler (proc string)
+(defun nopaste--filter (proc string)
   "handle async output from `nopaste-region'"
   (when nopaste-proc-buffer
-    (nopaste-ordinary-insertion-filter proc string))
+    (nopaste--ordinary-insertion-filter proc string))
   ;; TODO: the chomp might want to check for errors if the
   ;; sentinel doesn't suffice
-  (let ((url (-nopaste-chomp string)))
-    (message "Got URL %s from nopaste" url)
+  (let ((url (nopaste--chomp string)))
+    (message "Pasted content to URL %s" url)
     (when nopaste-kill-last-url
       (kill-new url))
-    (setq nopaste-last-url url)))
+    (setq nopaste--last-url url)))
 
-(defun nopaste-sentinel (proc event)
+(defun nopaste--sentinel (proc event)
   "handle errors from async process"
   (let ((err-fmt "Paste command %s failed with exit value %d")
         (status (process-exit-status proc)))
@@ -266,9 +266,9 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
 (defun nopaste-yank-url ()
   "Insert the URL of the last nopaste at point."
   (interactive)
-  (insert nopaste-last-url))
+  (insert nopaste--last-url))
 
-(defun -nopaste-chomp (str)
+(defun nopaste--chomp (str)
   "Private: Takes a `STR' and chomps its trailing \n$."
   (if (equal (elt str (- (length str) 1)) ?\n)
       (substring str 0 (- (length str) 1))
