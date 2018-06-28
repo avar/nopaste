@@ -80,6 +80,13 @@ Will use `nopaste' in your system's $PATH by default")
   name. For example, can be set to `*nopaste*' to see the output
   of the command interactively.")
 
+(defvar nopaste-proc-buffer-errors "*nopaste-errors*"
+  "Buffer name where to send errors from the subprocess. Can be
+  set to `nil' to use the same buffer as `nopaste-proc-buffer`,
+  but that also has the side-effect of sending errors to the
+  `nopaste-handler' which might be confusing because errors will
+  be mixed with URLs.")
+
 (defcustom nopaste-type-assoc
   '((actionscript-mode . " actionscript")
     (ada-mode . "ada")
@@ -211,6 +218,7 @@ and `END' aren't optional, i.e it also takes `NICKNAME'
                               :command (cons "nopaste" args)
                               :connection-type 'pipe
                               :buffer nopaste-proc-buffer
+                              :stderr nopaste-proc-buffer-errors
                               :name "nopaste")))
       (process-send-region proc start end)
       (process-send-eof proc)
